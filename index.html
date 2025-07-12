@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Contador de Férias com Fogos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      background-color: #121212;
+      color: #00FF00;
+      font-family: 'Share Tech Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+      overflow: hidden;
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    h2 {
+      color: #fff;
+      margin-bottom: 40px;
+      font-size: 2rem;
+    }
+
+    .contador {
+      background-color: #000;
+      color: #00FF00;
+      padding: 30px;
+      margin: 20px 0;
+      border-radius: 10px;
+      box-shadow: 0 0 20px #00ff00cc;
+      font-size: 1.5rem;
+      text-align: center;
+      width: 100%;
+      max-width: 600px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .contador strong {
+      display: block;
+      font-size: 1.4rem;
+      margin-bottom: 10px;
+      color: #ffffffcc;
+    }
+
+    .contador div {
+      margin-top: 5px;
+      font-size: 1.2rem;
+      line-height: 1.6;
+    }
+
+    canvas#fireworks {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Contador de Férias</h2>
+
+  <div id="contador1" class="contador"></div>
+  <div id="contador2" class="contador"></div>
+  <div id="contador3" class="contador"></div>
+
+  <canvas id="fireworks"></canvas>
+
+  <script>
+    // Dados das férias (declare só uma vez!)
+    const ferias = [
+      { nome: "Guilherme", data: "2025-07-12T14:05:00", duracaoDias: 15, elementoId: "contador1", fogos: false },
+      { nome: "Fernanda", data: "2025-09-15T18:00:00", duracaoDias: 20, elementoId: "contador2", fogos: false },
+      { nome: "João", data: "2025-12-01T18:00:00", duracaoDias: 10, elementoId: "contador3", fogos: false }
+    ];
+
+    // Setup canvas para fogos
+    const canvas = document.getElementById("fireworks");
+    const ctx = canvas.getContext("2d");
+
+    function ajustarCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    ajustarCanvas();
+    window.addEventListener('resize', ajustarCanvas);
+
+    const fireworks = [];
+
+    function criarFogo() {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height / 2;
+      const cores = ['#ff0043', '#14fc56', '#1e90ff', '#ffff00', '#ff8800'];
+      const cor = cores[Math.floor(Math.random() * cores.length)];
+
+      for (let i = 0; i < 50; i++) {
+        fireworks.push({
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 6,
+          vy: (Math.random() - 0.5) * 6,
+          alpha: 1,
+          cor
+        });
+      }
+    }
+
+    function desenharFogos() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = fireworks.length - 1; i >= 0; i--) {
+        const f = fireworks[i];
+        f.x += f.vx;
+        f.y += f.vy;
+        f.alpha -= 0.015;
+
+        if (f.alpha <= 0) {
+          fireworks.splice(i, 1);
+          continue;
+        }
+
+        ctx.globalAlpha = f.alpha;
+        ctx.fillStyle = f.cor;
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(desenharFogos);
+    }
+
+    function iniciarFogos() {
+      for (let i = 0; i < 10; i++) {
+        setTimeout(criarFogo, i * 400);
+      }
+    }
+
+    function atualizarContadores() {
+      const agora = new Date();
+
+      ferias.forEach(f => {
+        const inicio = new Date(f.data);
+        const fim = new Date(inicio.getTime() + f.duracaoDias * 24 * 60 * 60 * 1000);
+        const elemento = document.getElementById(f.elementoId);
+
+        if (agora < inicio) {
+          // Antes das férias: contagem regressiva
+          const diferenca = inicio - agora;
+
+          const diasTotais = Math.floor(diferenca / (1000 * 60 * 60 * 24));
+          const semanas = Math.floor(diasTotais / 7);
+          const dias = diasTotais % 7;
+
+          const horas = Math.floor((diferenca % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutos = Math.floor((diferenca % (1000 * 60 * 60)) / (1000 * 60));
+          const segundos = Math.floor((diferenca % (1000 * 60)) / 1000);
+
+          elemento.innerHTML = `
+            <strong>Férias de ${f.nome}</strong>
+            <div>Faltam:</div>
+            <div>📅 ${diasTotais} ${diasTotais === 1 ? 'dia' : 'dias'} 
+              (${semanas} ${semanas === 1 ? 'semana' : 'semanas'} e ${dias} ${dias === 1 ? 'dia' : 'dias'})</div>
+            <div>⏰ ${String(horas).padStart(2, '0')}h :
+                 ${String(minutos).padStart(2, '0')}m :
+                 ${String(segundos).padStart(2, '0')}s</div>
+          `;
+
+          // Reset fogos para disparar na próxima vez que chegar a hora
+          f.fogos = false;
+
+        } else if (agora >= inicio && agora < fim) {
+          // Durante as férias
+          const restante = fim - agora;
+          const diasRestantes = Math.ceil(restante / (1000 * 60 * 60 * 24));
+
+          elemento.innerHTML = `
+            <strong>Férias de ${f.nome}</strong>
+            <div>🎉 Estão acontecendo!</div>
+            <div>Volta em ${diasRestantes} ${diasRestantes === 1 ? 'dia' : 'dias'}.</div>
+          `;
+
+          if (!f.fogos) {
+            f.fogos = true;
+            iniciarFogos();
+          }
+
+        } else {
+          // Depois das férias
+          elemento.innerHTML = `
+            <strong>Férias de ${f.nome}</strong>
+            <div>✔️ Férias terminaram.</div>
+          `;
+          // Garantir que fogos não continuem
+          f.fogos = false;
+        }
+      });
+    }
+
+    setInterval(atualizarContadores, 1000);
+    atualizarContadores();
+    desenharFogos();
+
+  </script>
+</body>
+</html>
