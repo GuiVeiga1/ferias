@@ -1,42 +1,55 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
   <meta charset="UTF-8" />
-  <title>Contador de Férias com Fogos</title>
+  <title>Contador de Férias com Fogos - Responsivo</title>
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
   <style>
+    /* Reset básico */
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       background-color: #121212;
       color: #00FF00;
       font-family: 'Share Tech Mono', monospace;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+
+      /* Layout flexível, empilha por padrão */
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 40px;
-      overflow: hidden;
-      margin: 0;
-      min-height: 100vh;
+      gap: 12px;
+      overflow-x: hidden;
     }
 
     h2 {
       color: #fff;
-      margin-bottom: 40px;
       font-size: 2rem;
+      margin-bottom: 30px;
+      text-align: center;
+      width: 100%;
+      max-width: 700px;
     }
 
     .contador {
       background-color: #000;
-      color: #00FF00;
-      padding: 30px;
-      margin: 20px 0;
       border-radius: 10px;
       box-shadow: 0 0 20px #00ff00cc;
-      font-size: 1.5rem;
-      text-align: center;
-      width: 100%;
+      color: #00FF00;
+      padding: 20px;
       max-width: 600px;
+      width: 90vw;
+      /* ocupa quase toda a largura da tela em mobile */
+      text-align: center;
+      font-size: 1.3rem;
       position: relative;
       z-index: 1;
+      margin: 0 auto;
     }
 
     .contador strong {
@@ -61,8 +74,44 @@
       width: 100vw;
       height: 100vh;
     }
+
+    /* Layout em duas colunas para telas médias e maiores */
+    @media (min-width: 900px) {
+      body {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        padding: 40px;
+      }
+
+      .contador {
+        width: 45%;
+        /* duas colunas lado a lado */
+        margin: 0;
+      }
+
+      h2 {
+        width: 100%;
+        margin-bottom: 40px;
+        position: relative;
+        /* cria um contexto para z-index funcionar */
+        z-index: 10;
+        /* valor alto para ficar acima do canvas */
+      }
+
+    }
+
+    /* Ajustes para telas muito pequenas */
+    @media (max-width: 400px) {
+      .contador {
+        font-size: 1rem;
+        padding: 12px;
+      }
+    }
   </style>
 </head>
+
 <body>
 
   <h2>Contador de Férias</h2>
@@ -70,16 +119,24 @@
   <div id="contador1" class="contador"></div>
   <div id="contador2" class="contador"></div>
   <div id="contador3" class="contador"></div>
+  <div id="contador4" class="contador"></div>
 
   <canvas id="fireworks"></canvas>
 
   <script>
-    // Dados das férias (declare só uma vez!)
     const ferias = [
-      { nome: "Guilherme", data: "2025-07-12T14:05:00", duracaoDias: 15, elementoId: "contador1", fogos: false },
-      { nome: "Fernanda", data: "2025-09-15T18:00:00", duracaoDias: 20, elementoId: "contador2", fogos: false },
-      { nome: "João", data: "2025-12-01T18:00:00", duracaoDias: 10, elementoId: "contador3", fogos: false }
+      { nome: "Guilherme", data: "2025-08-04T18:00:00", duracaoDias: 30, elementoId: "contador2", fogos: false },
+      { nome: "GISLAINE", data: "2025-12-14T18:00:00", duracaoDias: 30, elementoId: "contador3", fogos: false },
+      { nome: "WILLIAM", data: "2026-06-01T18:00:00", duracaoDias: 20, elementoId: "contador4", fogos: false },
+      { nome: "FLAVIO", data: "2025-07-10T18:00:00", duracaoDias: 15, elementoId: "contador1", fogos: false }
     ];
+
+    function formatarData(d) {
+      const dia = String(d.getDate()).padStart(2, '0');
+      const mes = String(d.getMonth() + 1).padStart(2, '0');
+      const ano = d.getFullYear();
+      return `${dia}/${mes}/${ano}`;
+    }
 
     // Setup canvas para fogos
     const canvas = document.getElementById("fireworks");
@@ -153,7 +210,7 @@
         const elemento = document.getElementById(f.elementoId);
 
         if (agora < inicio) {
-          // Antes das férias: contagem regressiva
+          // Antes das férias
           const diferenca = inicio - agora;
 
           const diasTotais = Math.floor(diferenca / (1000 * 60 * 60 * 24));
@@ -166,6 +223,7 @@
 
           elemento.innerHTML = `
             <strong>Férias de ${f.nome}</strong>
+            <div>Início das férias: ${formatarData(inicio)}</div>
             <div>Faltam:</div>
             <div>📅 ${diasTotais} ${diasTotais === 1 ? 'dia' : 'dias'} 
               (${semanas} ${semanas === 1 ? 'semana' : 'semanas'} e ${dias} ${dias === 1 ? 'dia' : 'dias'})</div>
@@ -174,7 +232,6 @@
                  ${String(segundos).padStart(2, '0')}s</div>
           `;
 
-          // Reset fogos para disparar na próxima vez que chegar a hora
           f.fogos = false;
 
         } else if (agora >= inicio && agora < fim) {
@@ -185,7 +242,8 @@
           elemento.innerHTML = `
             <strong>Férias de ${f.nome}</strong>
             <div>🎉 Estão acontecendo!</div>
-            <div>Volta em ${diasRestantes} ${diasRestantes === 1 ? 'dia' : 'dias'}.</div>
+            <div>Volta em ${diasRestantes} ${diasRestantes === 1 ? 'dia' : 'dias'}</div>
+            <div>Data do retorno: ${formatarData(fim)}</div>
           `;
 
           if (!f.fogos) {
@@ -199,7 +257,6 @@
             <strong>Férias de ${f.nome}</strong>
             <div>✔️ Férias terminaram.</div>
           `;
-          // Garantir que fogos não continuem
           f.fogos = false;
         }
       });
@@ -208,7 +265,7 @@
     setInterval(atualizarContadores, 1000);
     atualizarContadores();
     desenharFogos();
-
   </script>
 </body>
+
 </html>
